@@ -1,0 +1,15 @@
+{
+  "AWS_REGION": "ap-southeast-1",
+  "LOCALE": "idn",
+  "QUEST_QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/196554126944/messaging-run_quest_messaging-idn-qa",
+  "QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/196554126944/messaging-run_messaging-idn-qa",
+  "THROTTLED_QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/196554126944/messaging-run_throttled_messaging-idn-qa",
+  "THROTTLED_ENABLED": "true",
+  "PROFILE": "idn-lambda",
+  "DEPLOYMENT_BUCKET": "kakaowebtoon-serverless-deploys-idn",
+  "ROLE": "arn:aws:iam::196554126944:role/lambda-execution-role",
+  "SECURITY_GROUP": "sg-0eae0a18f97b8a12f",
+  "SUBNET_1": "subnet-00b670aa47b9182f3",
+  "SUBNET_2": "subnet-06713094b22607b93",
+  "SUBNET_3": "subnet-08f24f947f6b6edc6"
+}
