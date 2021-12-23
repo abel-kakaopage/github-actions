@@ -1,0 +1,15 @@
+{
+  "AWS_REGION": "ap-southeast-1",
+  "LOCALE": "twn",
+  "QUEST_QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/337660215369/quest-messaging-qa",
+  "QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/337660215369/messaging-qa",
+  "THROTTLED_QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/337660215369/messaging-run_throttled_messaging-twn-qa",
+  "THROTTLED_ENABLED": "true",
+  "PROFILE": "twn",
+  "DEPLOYMENT_BUCKET": "kakaowebtoon-serverless-deploys-twn",
+  "ROLE": "arn:aws:iam::337660215369:role/lambda-data-migration-role",
+  "SECURITY_GROUP": "sg-033b58e5b6cdc9d6b",
+  "SUBNET_1": "subnet-0dae9855948e9e852",
+  "SUBNET_2": "subnet-0b3dbb01f0ebf63ef",
+  "SUBNET_3": "subnet-0b98c67f614d36eea"
+}
