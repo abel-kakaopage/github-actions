@@ -26,7 +26,7 @@ provider:
       - ${self:custom.env.SUBNET_2}
       - ${self:custom.env.SUBNET_3}
   environment:
-    ALARM_QUEUE_URL: ${self:custom.common.ALARM_QUEUE_URL}
+    SLACK_CHANNEL: ${self:custom.common.SLACK_CHANNEL}
     LOCALE: ${self:custom.env.LOCALE}
   logRetentionInDays: ${self:custom.env.LOG_RETENTION, 3}
 
