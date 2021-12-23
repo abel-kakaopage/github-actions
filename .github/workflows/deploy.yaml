@@ -1,4 +1,4 @@
-name: Deploy Popularity Message Relay Lambda Function
+name: Deploy Sample Lambda
 on:
   workflow_dispatch:
     inputs:
