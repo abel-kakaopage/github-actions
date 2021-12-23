@@ -86,8 +86,9 @@ jobs:
             fi
 
             npm install -g serverless
-            echo "LOCALE=$var" >> $GITHUB_ENV
+            echo "LOCALE=$var"
             echo "serverless deploy --verbose --stage $stage --region $awsRegion --aws-profile deploy"
+            echo "LOCALE=$var" >> $GITHUB_ENV
             serverless deploy --verbose --stage $stage --region $awsRegion --aws-profile deploy
           done
         working-directory: ${{ env.working-directory }}
