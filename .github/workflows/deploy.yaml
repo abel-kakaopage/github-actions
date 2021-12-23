@@ -58,12 +58,8 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION_SINGAPOLE }}
           LOCALE: tha
         run: |
-          branchName=${{ steps.extract_branch.outputs.branch }}
-          region=${{ github.event.inputs.region }}
-          stage=qa
-          if [[ $branchName =~ 'refs/tags' ]]
-          then
-              stage=prod
+          if [[ ${{ steps.extract_branch.outputs.branch}} =~ 'refs/tags' ]]; then stage=prod
+          else stage=qa
           fi
 
           echo "Deploy ${{ github.event.inputs.path }} - Taipei"
@@ -80,11 +76,8 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION_SINGAPOLE }}
           LOCALE: twn
         run: |
-          branchName=${{ steps.extract_branch.outputs.branch}}
-          stage=qa
-          if [[ $branchName =~ 'refs/tags' ]]
-          then
-              stage=prod
+          if [[ ${{ steps.extract_branch.outputs.branch}} =~ 'refs/tags' ]]; then stage=prod
+          else stage=qa
           fi
 
           echo "Deploy ${{ github.event.inputs.path }} - Taiwan"
@@ -101,11 +94,8 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           LOCALE: kor
         run: |
-          branchName=${{ steps.extract_branch.outputs.branch}}
-          stage=qa
-          if [[ $branchName =~ 'refs/tags' ]]
-          then
-              stage=prod
+          if [[ ${{ steps.extract_branch.outputs.branch}} =~ 'refs/tags' ]]; then stage=prod
+          else stage=qa
           fi
 
           echo "Deploy ${{ github.event.inputs.path }} - Korea"
