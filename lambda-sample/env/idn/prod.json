@@ -1,0 +1,12 @@
+{
+  "AWS_REGION": "ap-southeast-1",
+  "LOCALE": "idn",
+  "ALARM_QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/196554126944/messaging-error_logs-idn-prod",
+  "PROFILE": "idn-lambda",
+  "DEPLOYMENT_BUCKET": "kakaowebtoon-serverless-deploys-idn",
+  "ROLE": "arn:aws:iam::196554126944:role/lambda-execution-role",
+  "SECURITY_GROUP": "sg-038a6ac7b3ea49f9e",
+  "SUBNET_1": "subnet-08303035247523b3d",
+  "SUBNET_2": "subnet-03d8a824142645c8d",
+  "SUBNET_3": "subnet-0cb4067ecb363b50d"
+}

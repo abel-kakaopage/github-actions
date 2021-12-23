@@ -1,0 +1,109 @@
+name: Deploy Popularity Message Relay Lambda Function
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: 'lambda-sample'
+        required: true
+        default: 'lambda-sample'
+      region:
+        description: 'all, kor, twn, tha, idn'
+        required: true
+        default: 'all'
+
+jobs:
+  deploy:
+    name: lambda deploy
+    runs-on: ubuntu-20.04
+    env:
+      working-directory: ./${{ github.event.inputs.path }}
+    strategy:
+      matrix:
+        node-version: [ 14.x ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: npm install
+        working-directory: ${{ env.working-directory }}
+        run: npm ci
+
+      - name: Extract current git branch and tag name
+        shell: bash
+        run: |
+          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+          echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
+        id: extract_branch
+
+      - name: serverless deploy (sandbox case)
+        run: |
+          echo "serverless deploy --stage sandbox --region ${{ secrets.AWS_REGION }} --aws-profile deploy"
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile deploy
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile deploy
+          aws configure set region ${{ secrets.AWS_REGION }} --profile deploy
+          npm install -g serverless
+          serverless deploy --stage sandbox --region ${{ secrets.AWS_REGION }} --aws-profile deploy
+        working-directory: ${{ env.working-directory }}
+        if: contains(steps.extract_branch.outputs.branch, 'sandbox')
+
+      - name: serverless deploy (qa, production)
+        run: |
+          branchName=${{ steps.extract_branch.outputs.branch}}
+          stage=qa
+          awsRegion='ap-northeast-2'
+          if [[ $branchName == 'master' ]]
+          then
+              stage=prod
+          fi
+
+          region="${{ github.event.inputs.region }}"
+          if [[ $region == 'all' ]]
+          then
+            region="kor tha twn idn"
+          fi
+
+          for var in $region
+          do
+            echo "Deploy ${{ github.event.inputs.path }} - stage = $stage, region = $var"
+            if [ $var == 'tha' ]
+            then
+                awsRegion=${{ secrets.AWS_REGION_SINGAPOLE }}
+                aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_THA }} --profile deploy
+                aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_THA }} --profile deploy
+            elif [ $var == 'twn' ]
+            then
+                awsRegion=${{ secrets.AWS_REGION_SINGAPOLE }}
+                aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_TWN }} --profile deploy
+                aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_TWN }} --profile deploy
+            elif [ $var == 'kor' ]
+            then
+                aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_KOR }} --profile deploy
+                aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_KOR }} --profile deploy
+            elif [ $var == 'idn' ]
+            then
+                awsRegion=${{ secrets.AWS_REGION_SINGAPOLE }}
+                aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_GLOBAL }} --profile deploy
+                aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_GLOBAL }} --profile deploy
+            fi
+
+            npm install -g serverless
+            echo "LOCALE=$var" >> $GITHUB_ENV
+            echo "serverless deploy --verbose --stage $stage --region $awsRegion --aws-profile deploy"
+            serverless deploy --verbose --stage $stage --region $awsRegion --aws-profile deploy
+          done
+        working-directory: ${{ env.working-directory }}
+        if: ${{ contains(steps.extract_branch.outputs.branch, 'qa') || ${{ contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'master') }}
+
+#      - name: Slack Notification
+#        uses: 8398a7/action-slack@v3.8.0
+#        with:
+#          status: ${{ job.status }}
+#          fields: repo,author,eventName,workflow,ref
+#          channel: '#kw-backend-notification'
+#        env:
+#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+#        if: always()

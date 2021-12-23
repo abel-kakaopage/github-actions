@@ -1,0 +1,13 @@
+{
+  "AWS_REGION": "ap-northeast-2",
+  "LOCALE": "kor",
+  "ALARM_QUEUE_URL": "https://sqs.ap-northeast-2.amazonaws.com/727505830175/messaging-error_logs-prod",
+  "PROFILE": "kor",
+  "DEPLOYMENT_BUCKET": "kakaowebtoon-serverless-deploys-kor",
+  "ROLE": "arn:aws:iam::727505830175:role/lambda-data-migration-role",
+  "SECURITY_GROUP": "sg-05eedfca5245ac5a0",
+  "SUBNET_1": "subnet-06e2d09a883154a0f",
+  "SUBNET_2": "subnet-02dbf0a976ca04136",
+  "SUBNET_3": "subnet-0d8de70eef736a80c",
+  "LOG_RETENTION": 7
+}

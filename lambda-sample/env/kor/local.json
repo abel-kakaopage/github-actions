@@ -1,0 +1,12 @@
+{
+  "AWS_REGION": "ap-northeast-2",
+  "LOCALE": "kor",
+  "ALARM_QUEUE_URL": "",
+  "PROFILE": "kwtoon",
+  "DEPLOYMENT_BUCKET": "kakaowebtoon-serverless-deploys-sandbox",
+  "ROLE": "arn:aws:iam::593352196761:role/lambda-data-migration-role",
+  "SECURITY_GROUP": "sg-02445518fe6146038",
+  "SUBNET_1": "subnet-0501e804a4f23a0bd",
+  "SUBNET_2": "subnet-09b6dab87f8ec84e6",
+  "SUBNET_3": "subnet-06509a32621e0ffcc"
+}

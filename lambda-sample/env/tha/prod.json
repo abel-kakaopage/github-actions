@@ -1,0 +1,13 @@
+{
+  "AWS_REGION": "ap-southeast-1",
+  "LOCALE": "tha",
+  "ALARM_QUEUE_URL": "https://sqs.ap-southeast-1.amazonaws.com/337660215369/messaging-error_logs-prod",
+  "PROFILE": "tha",
+  "DEPLOYMENT_BUCKET": "kakaowebtoon-serverless-deploys-tha",
+  "ROLE": "arn:aws:iam::447157991422:role/lambda-data-migration-role",
+  "SECURITY_GROUP": "sg-076029550ed28a936",
+  "SUBNET_1": "subnet-038fe99b6852514a4",
+  "SUBNET_2": "subnet-0c97fe9038955c2e9",
+  "SUBNET_3": "subnet-0d5550db4ecf5e73c",
+  "LOG_RETENTION": 7
+}
