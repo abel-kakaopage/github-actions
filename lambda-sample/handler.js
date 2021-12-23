@@ -9,7 +9,7 @@ module.exports.hello = async event => {
         input: event,
       },
       null,
-      1
+      0
     ),
   };
 };
