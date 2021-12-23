@@ -59,7 +59,7 @@ jobs:
         run: |
           branchName=${{ steps.extract_branch.outputs.branch}}
           stage=qa
-          if [[ $branchName == 'master' ]]
+          if [[ $branchName =~ 'refs/tags' ]]
           then
               stage=prod
           fi
@@ -79,7 +79,7 @@ jobs:
         run: |
           branchName=${{ steps.extract_branch.outputs.branch}}
           stage=qa
-          if [[ $branchName == 'master' ]]
+          if [[ $branchName =~ 'refs/tags' ]]
           then
               stage=prod
           fi
@@ -89,7 +89,7 @@ jobs:
           echo "LOCALE=twn serverless deploy --verbose --stage $stage"
           LOCALE=twn serverless deploy --verbose --stage $stage
         working-directory: ${{ env.working-directory }}
-        if: ${{ contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'master') && (contains(github.event.inputs.region, 'twn') || contains(github.event.inputs.region, 'all')) }}
+        if: ${{ contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'tags/') && (contains(github.event.inputs.region, 'twn') || contains(github.event.inputs.region, 'all')) }}
 
       - name: serverless deploy Korea (qa, production)
         env:
@@ -99,7 +99,7 @@ jobs:
         run: |
           branchName=${{ steps.extract_branch.outputs.branch}}
           stage=qa
-          if [[ $branchName == 'master' ]]
+          if [[ $branchName =~ 'refs/tags' ]]
           then
               stage=prod
           fi
@@ -109,7 +109,7 @@ jobs:
           echo "LOCALE=kor serverless deploy --verbose --stage $stage"
           LOCALE=kor serverless deploy --verbose --stage $stage
         working-directory: ${{ env.working-directory }}
-        if: ${{ contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'master') && (contains(github.event.inputs.region, 'kor') || contains(github.event.inputs.region, 'all')) }}
+        if: ${{ contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'tags/') && (contains(github.event.inputs.region, 'kor') || contains(github.event.inputs.region, 'all')) }}
 
 #      - name: Slack Notification
 #        uses: 8398a7/action-slack@v3.8.0
