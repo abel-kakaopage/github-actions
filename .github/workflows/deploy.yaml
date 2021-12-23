@@ -7,7 +7,7 @@ on:
         required: true
         default: 'lambda-sample'
       region:
-        description: 'all, kor, twn, tha, idn'
+        description: 'all, kor, twn, tha'
         required: true
         default: 'all'
 
@@ -63,7 +63,7 @@ jobs:
           region="${{ github.event.inputs.region }}"
           if [[ $region == 'all' ]]
           then
-            region="kor tha twn idn"
+            region="kor tha twn"
           fi
 
           for var in $region
@@ -83,11 +83,6 @@ jobs:
             then
                 aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_KOR }} --profile deploy
                 aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_KOR }} --profile deploy
-            elif [ $var == 'idn' ]
-            then
-                awsRegion=${{ secrets.AWS_REGION_SINGAPOLE }}
-                aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_GLOBAL }} --profile deploy
-                aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_GLOBAL }} --profile deploy
             fi
 
             npm install -g serverless
