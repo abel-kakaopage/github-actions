@@ -40,13 +40,15 @@ jobs:
         id: extract_branch
 
       - name: serverless deploy (sandbox case)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DOCKERFILE: "Dockerfile"
         run: |
-          echo "serverless deploy --stage sandbox --region ${{ secrets.AWS_REGION }} --aws-profile deploy"
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile deploy
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile deploy
-          aws configure set region ${{ secrets.AWS_REGION }} --profile deploy
+          echo "serverless deploy --stage sandbox"
           npm install -g serverless
-          serverless deploy --stage sandbox --region ${{ secrets.AWS_REGION }} --aws-profile deploy
+          serverless deploy --stage sandbox
         working-directory: ${{ env.working-directory }}
         if: contains(steps.extract_branch.outputs.branch, 'sandbox')
 
