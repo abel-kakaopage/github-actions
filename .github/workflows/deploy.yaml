@@ -96,7 +96,7 @@ jobs:
             serverless deploy --verbose --stage $stage --region $awsRegion --aws-profile deploy
           done
         working-directory: ${{ env.working-directory }}
-        if: ${{ contains(steps.extract_branch.outputs.branch, 'qa') || ${{ contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'master') }}
+        if: ${{ contains(steps.extract_branch.outputs.branch, 'qa') || contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'master') }}
 
 #      - name: Slack Notification
 #        uses: 8398a7/action-slack@v3.8.0
