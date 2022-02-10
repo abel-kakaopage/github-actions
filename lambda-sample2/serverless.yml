@@ -1,0 +1,35 @@
+service: lambda-sample2
+frameworkVersion: '2'
+
+custom:
+  prune:
+    automatic: true
+    number: 10
+  common: ${file(./env/common.json)}
+  env: ${file(./env/${env:LOCALE, 'kor'}/${opt:stage,'local'}.json)}
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  lambdaHashingVersion: 20201221
+  region: ${self:custom.env.AWS_REGION}
+  memorySize: 128
+  timeout: 30
+  deploymentBucket:
+    name: ${self:custom.env.DEPLOYMENT_BUCKET}
+  role: ${self:custom.env.ROLE}
+  vpc:
+    securityGroupIds:
+      - ${self:custom.env.SECURITY_GROUP}
+    subnetIds:
+      - ${self:custom.env.SUBNET_1}
+      - ${self:custom.env.SUBNET_2}
+      - ${self:custom.env.SUBNET_3}
+  environment:
+    SLACK_CHANNEL: ${self:custom.common.SLACK_CHANNEL}
+    LOCALE: ${env:LOCALE}
+  logRetentionInDays: ${self:custom.env.LOG_RETENTION, 3}
+
+functions:
+  main:
+    handler: handler.main
