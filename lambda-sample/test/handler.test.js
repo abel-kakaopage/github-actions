@@ -8,8 +8,7 @@ const {GenericContainer} = require("testcontainers");
 const mysql = require("mysql");
 const dbModule = require('../db-module');
 
-describe('lambdaService', () => {
-
+describe('메인 함수 Validation 테스트', () => {
     const containers = {};
     before(async () => {
         containers.mysqlContainer = await new GenericContainer('mysql:5.7')
@@ -74,7 +73,7 @@ describe('lambdaService', () => {
         });
     }
 
-    it("main-test", async () => {
+    it("구독자 정보로 에피소드 업데이트 푸시 발송 메시지를 구성하는데 성공한다", async () => {
         process.env.USER_SETTINGS_HOOK = "http://notification/settings";
         process.env.LOCALE = "kor";
         const connection = await getConnection();
@@ -91,7 +90,7 @@ describe('lambdaService', () => {
         expect(messageBody.hooks.before[0].data.pushType).to.equal("EPISODE_UPDATE");
         expect(messageBody.hooks.before[0].data.region).to.equal(process.env.LOCALE);
         expect(messageBody.message.type).to.equal("EPISODE_UPDATE");
-        expect(messageBody.message.title).to.equal("사랑해요 업데이트1");
+        expect(messageBody.message.title).to.equal("사랑해요 업데이트");
         expect(messageBody.message.body).to.equal("'어게인 1화 ~ 포지션5화'가 업데이트 되었습니다.");
         expect(messageBody.message.thumbnail).to.equal("https://${CDN_HOST}/C/46/c1/2x/02fab9c9-c7dd-454b-8731-cd0be951ee64");
         expect(messageBody.message.link).to.equal("kakaowebtoon://content/seo_99999/66");
