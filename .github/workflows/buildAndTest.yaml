@@ -28,7 +28,7 @@ jobs:
 
       - name: build and test
         working-directory: ${{ matrix.working-directory }}
-        run: mocha --timeout 15000
+        run: npm test
 
 #      - name: Slack Notification
 #        uses: 8398a7/action-slack@v3.8.0
