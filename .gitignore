@@ -1,1 +1,4 @@
 /.idea
+/lambda-sample/target/prod/cloudformation-template-update-stack.json
+/lambda-sample/target/prod/lambda-sample.zip
+/lambda-sample/target/prod/serverless-state.json
