@@ -1,0 +1,41 @@
+name: Integration Sample Lambda
+
+on:
+  pull_request:
+    branches:
+      - sandbox # all feature branch PR to sandbox branch
+      - develop # features checked on sandbox server and then all feature branch PR to develop branch
+
+jobs:
+  build:
+    name: build and test lambda
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        node-version: [ 14.x ]
+        working-directory: ['lambda-sample']
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies
+        working-directory: ${{ matrix.working-directory }}
+        run: npm ci
+
+      - name: build and test
+        working-directory: ${{ matrix.working-directory }}
+        run: mocha --timeout 15000
+
+#      - name: Slack Notification
+#        uses: 8398a7/action-slack@v3.8.0
+#        with:
+#          status: ${{ job.status }}
+#          fields: repo,author,eventName,workflow,ref
+#          channel: '#kw-backend-notification'
+#        env:
+#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+#        if: always()

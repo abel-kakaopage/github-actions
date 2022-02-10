@@ -31,5 +31,5 @@ provider:
   logRetentionInDays: ${self:custom.env.LOG_RETENTION, 3}
 
 functions:
-  hello:
-    handler: handler.hello
+  main:
+    handler: handler.main
