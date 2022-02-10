@@ -26,7 +26,7 @@ jobs:
         working-directory: ${{ matrix.working-directory }}
         run: npm ci
 
-      - name: build and test
+      - name: ${{ matrix.working-directory }} - build and test
         working-directory: ${{ matrix.working-directory }}
         run: npm test
 
