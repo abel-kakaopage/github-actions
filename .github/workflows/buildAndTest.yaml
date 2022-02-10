@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         node-version: [ 14.x ]
-        working-directory: ['lambda-sample']
+        working-directory: ['lambda-sample','lambda-sample2']
     steps:
       - uses: actions/checkout@v2
 
