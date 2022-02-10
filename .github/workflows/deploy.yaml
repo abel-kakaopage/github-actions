@@ -56,18 +56,16 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_THA }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_THA }}
           AWS_REGION: ${{ secrets.AWS_REGION_SINGAPOLE }}
+          LOCALE: tha
         run: |
-          branchName=${{ steps.extract_branch.outputs.branch}}
-          stage=qa
-          if [[ $branchName =~ 'refs/tags' ]]
-          then
-              stage=prod
+          if [[ ${{ steps.extract_branch.outputs.branch}} =~ 'refs/tags' ]]; then stage=prod
+          else stage=qa
           fi
 
           echo "Deploy ${{ github.event.inputs.path }} - Taipei"
           npm install -g serverless
-          echo "LOCALE=tha serverless deploy --verbose --stage $stage"
-          LOCALE=tha serverless deploy --verbose --stage $stage
+          echo "serverless deploy --verbose --stage $stage"
+          serverless deploy --verbose --stage $stage
         working-directory: ${{ env.working-directory }}
         if: ${{ (contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'master')) && (contains(github.event.inputs.region, 'tha') || contains(github.event.inputs.region, 'all')) }}
 
@@ -76,18 +74,16 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_TWN }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_TWN }}
           AWS_REGION: ${{ secrets.AWS_REGION_SINGAPOLE }}
+          LOCALE: twn
         run: |
-          branchName=${{ steps.extract_branch.outputs.branch}}
-          stage=qa
-          if [[ $branchName =~ 'refs/tags' ]]
-          then
-              stage=prod
+          if [[ ${{ steps.extract_branch.outputs.branch}} =~ 'refs/tags' ]]; then stage=prod
+          else stage=qa
           fi
 
           echo "Deploy ${{ github.event.inputs.path }} - Taiwan"
           npm install -g serverless
-          echo "LOCALE=twn serverless deploy --verbose --stage $stage"
-          LOCALE=twn serverless deploy --verbose --stage $stage
+          echo "serverless deploy --verbose --stage $stage"
+          serverless deploy --verbose --stage $stage
         working-directory: ${{ env.working-directory }}
         if: ${{ (contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'tags/')) && (contains(github.event.inputs.region, 'twn') || contains(github.event.inputs.region, 'all')) }}
 
@@ -96,18 +92,16 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_KOR }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_KOR }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          LOCALE: kor
         run: |
-          branchName=${{ steps.extract_branch.outputs.branch}}
-          stage=qa
-          if [[ $branchName =~ 'refs/tags' ]]
-          then
-              stage=prod
+          if [[ ${{ steps.extract_branch.outputs.branch}} =~ 'refs/tags' ]]; then stage=prod
+          else stage=qa
           fi
 
           echo "Deploy ${{ github.event.inputs.path }} - Korea"
           npm install -g serverless
-          echo "LOCALE=kor serverless deploy --verbose --stage $stage"
-          LOCALE=kor serverless deploy --verbose --stage $stage
+          echo "serverless deploy --verbose --stage $stage"
+          serverless deploy --verbose --stage $stage
         working-directory: ${{ env.working-directory }}
         if: ${{ (contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'tags/')) && (contains(github.event.inputs.region, 'kor') || contains(github.event.inputs.region, 'all')) }}
 
