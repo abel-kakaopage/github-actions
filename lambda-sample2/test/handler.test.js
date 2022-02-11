@@ -1,4 +1,3 @@
-const AWS = require("aws-sdk");
 const lambda = require('../handler');
 const sinon = require("sinon");
 const expect = require("chai").expect;
