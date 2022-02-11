@@ -1,0 +1,20 @@
+{
+  "Records": [
+    {
+      "messageId": "fc5adb03-9115-42b2-816e-b9fb1999e7f1",
+      "receiptHandle": "AQEB5DPKjiME550mXQWcOpegkqVwJfVds01se90sI15e/mdI8Kz5HPEyG85Zi/L3RIhhfJDa4xNnaootIn3lSrs0dIecBfV6exHAXYQmeOiCkLiu6aif/+OTmmgpyjHJgYrkRmrXjbGT/m46PaqaBee7pBVVo3A7ISb3wtC0+nvC9eR63Ms/43F6KOzGILpXkF0Rr9X+V0xKt0RjXKJ+DTunY0FKLF+Qn7B4lufcUM9p9q8HcQwAnTFa0f4R0pz/2a4r9rmKuCpNCawE7JNvMELphWXxy8RtTfy9yRfc4w1A88w3aLZWqNXTygCivRabVRAeu9r6BgjCibu42IYM0MMK0MyITELcvbpzmwABmnUzKrJwpyNGIX09ZQUckCmYP0u6M+fKL6Ox08PlijnfvfVgSjlbvbutWYgkDJeMWYODxA0=",
+      "body": "{\"type\":\"update-content\",\"language\":\"ko\",\"content_id\":66,\"asset_thumbnail_image\":\"C/46/c1/2x/02fab9c9-c7dd-454b-8731-cd0be951ee64\",\"seo_id\":\"seo_99999\",\"content_title\":\"사랑해요\",\"title\":\"어게인 1화\",\"last_title\":\"포지션5화\"}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1617716352586",
+        "SenderId": "AIDAYUJUMAKM5TZZNG5VG",
+        "ApproximateFirstReceiveTimestamp": "1617716353076"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "d9aa0bc95354f448cc10882960c70a2b",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:ap-northeast-2:593352196761:webtoon-event-push-sandbox",
+      "awsRegion": "ap-northeast-2"
+    }
+  ]
+}

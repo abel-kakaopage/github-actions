@@ -1,11 +1,11 @@
-name: Deploy Sample Lambda
+name: Deploy BI Lambda Function
 on:
   workflow_dispatch:
     inputs:
       path:
-        description: 'lambda-sample'
+        description: 'generate-hourly-ranking, generate-hourly-kor-ranking, generate-daily-ranking, generate-daily-daum-portal-ranking, generate-weekly-ranking, generate-steady-seller, generate-today-match'
         required: true
-        default: 'lambda-sample'
+        default: 'generate-hourly-ranking'
       region:
         description: 'all, kor, twn, tha'
         required: true
@@ -19,7 +19,7 @@ jobs:
       working-directory: ./${{ github.event.inputs.path }}
     strategy:
       matrix:
-        node-version: [ 14.x ]
+        node-version: [ 12.x ]
     steps:
       - uses: actions/checkout@v2
 
@@ -39,27 +39,15 @@ jobs:
           echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
         id: extract_branch
 
-      - name: serverless deploy (sandbox case)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          DOCKERFILE: "Dockerfile"
-        run: |
-          echo "serverless deploy --stage sandbox"
-          npm install -g serverless
-          serverless deploy --stage sandbox
-        working-directory: ${{ env.working-directory }}
-        if: contains(steps.extract_branch.outputs.branch, 'sandbox')
-
       - name: serverless deploy (qa, production)
         run: |
           branchName=${{ steps.extract_branch.outputs.branch}}
-          stage=qa
+          stage=prod
           awsRegion='ap-northeast-2'
-          if [[ $branchName == 'master' ]]
+          configFile=serverless-tha.yml
+          if [[ "$branchName" =~ 'release' ]]
           then
-              stage=prod
+              stage=qa
           fi
 
           region="${{ github.event.inputs.region }}"
@@ -73,26 +61,33 @@ jobs:
             echo "Deploy ${{ github.event.inputs.path }} - stage = $stage, region = $var"
             if [ $var == 'tha' ]
             then
+                configFile=serverless-tha.yml
                 awsRegion=${{ secrets.AWS_REGION_SINGAPOLE }}
                 aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_THA }} --profile deploy
                 aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_THA }} --profile deploy
             elif [ $var == 'twn' ]
             then
+                configFile=serverless-twn.yml
                 awsRegion=${{ secrets.AWS_REGION_SINGAPOLE }}
                 aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_TWN }} --profile deploy
                 aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_TWN }} --profile deploy
             elif [ $var == 'kor' ]
             then
+                configFile=serverless-kor.yml
                 aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_KOR }} --profile deploy
                 aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_KOR }} --profile deploy
             fi
 
-            npm install -g serverless
-            echo "LOCALE=$var serverless deploy --verbose --stage $stage --region $awsRegion --aws-profile deploy"
-            LOCALE=$var serverless deploy --verbose --stage $stage --region $awsRegion --aws-profile deploy
+            if [ $var == 'tha' ] || [ $var == 'twn' ] || [ $var == 'kor' ]
+            then
+                npm install -g serverless
+                echo "serverless deploy --stage $stage --region $awsRegion --aws-profile deploy -c $configFile"
+                serverless deploy --stage $stage --region $awsRegion --aws-profile deploy -c $configFile
+            fi
+
           done
         working-directory: ${{ env.working-directory }}
-        if: ${{ contains(steps.extract_branch.outputs.branch, 'qa') || contains(steps.extract_branch.outputs.branch, 'release/') || contains(steps.extract_branch.outputs.branch, 'master') }}
+        if: ${{ contains(steps.extract_branch.outputs.branch, 'release/') || contains(github.ref, 'refs/tags/') }}
 
 #      - name: Slack Notification
 #        uses: 8398a7/action-slack@v3.8.0
@@ -103,3 +98,4 @@ jobs:
 #        env:
 #          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 #        if: always()
+

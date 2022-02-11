@@ -1,4 +1,4 @@
-service: lambda-sample
+service: lambda-sample2
 frameworkVersion: '2'
 
 custom:
