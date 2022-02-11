@@ -27,7 +27,7 @@ provider:
       - ${self:custom.env.SUBNET_3}
   environment:
     SLACK_CHANNEL: ${self:custom.common.SLACK_CHANNEL}
-    LOCALE: ${env:LOCALE}
+    LOCALE: ${self:custom.env.LOCALE}
   logRetentionInDays: ${self:custom.env.LOG_RETENTION, 3}
 
 functions:
