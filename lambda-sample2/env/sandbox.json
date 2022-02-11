@@ -1,10 +1,13 @@
 {
   "LOCALE": "kor",
   "REGION": "ap-northeast-2",
-  "QUERY_RESULT": "s3://aws-athena-query-results-593352196761-ap-northeast-2",
-  "ATHENA_DB": "dev",
-  "KAFKA_BROKER": "b-1.webtoon-service-s.qhvpjd.c2.kafka.ap-northeast-2.amazonaws.com:9092,b-2.webtoon-service-s.qhvpjd.c2.kafka.ap-northeast-2.amazonaws.com:9092",
-  "KAFKA_TOPIC": "queuing-bi-ranking",
   "S3_BUCKET_NAME": "data-design-dw-dev",
-  "TIME_ZONE": "Asia/Seoul"
+  "TIME_ZONE": "Asia/Seoul",
+  "PROFILE": "kwtoon",
+  "DEPLOYMENT_BUCKET": "kakaowebtoon-serverless-deploys-sandbox",
+  "ROLE": "arn:aws:iam::593352196761:role/lambda-data-migration-role",
+  "SECURITY_GROUP": "sg-02445518fe6146038",
+  "SUBNET_1": "subnet-0501e804a4f23a0bd",
+  "SUBNET_2": "subnet-09b6dab87f8ec84e6",
+  "SUBNET_3": "subnet-06509a32621e0ffcc"
 }
