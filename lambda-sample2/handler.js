@@ -10,7 +10,7 @@ const AthenaExpress = require("athena-express");
 const {v4: uuid4} = require('uuid');
 const s3 = new aws.S3();
 const athenaExpressConfig = {
-    aws,
+    aws: aws,
     db: process.env.ATHENA_DB,
     s3: process.env.QUERY_RESULT,
 };
