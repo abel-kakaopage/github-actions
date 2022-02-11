@@ -9,12 +9,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "athena-express": "^7.1.4",
     "aws-sdk": "^2.882.0",
     "axios": "^0.21.1",
+    "fs": "0.0.1-security",
+    "hashmap": "^2.4.0",
     "i18n-2": "^0.7.3",
+    "kafkajs": "^1.16.0",
+    "mocha": "^9.2.0",
+    "moment-timezone": "^0.5.34",
     "mysql": "^2.18.1",
+    "path": "^0.12.7",
     "uid": "^2.0.0",
-    "mocha": "^9.2.0"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "chai": "^4.3.6",

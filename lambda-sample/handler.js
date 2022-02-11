@@ -106,7 +106,12 @@ async function sendSQS(message, queueUrl) {
     };
     await sqs.sendMessage(params).promise();
 }
-
+const deps = {
+    getSubscriptionUsers,
+    makeMessagingBody,
+    sendSQS
+}
+module.exports = deps;
 module.exports.main = async event => {
     try {
         if (event) {
@@ -122,9 +127,9 @@ module.exports.main = async event => {
                     let lastId = message.last_id | 0;
                     console.info("Initial lastId: " + lastId);
                     while (loop) {
-                        const rows = await getSubscriptionUsers(message.content_id, lastId);
+                        const rows = await deps.getSubscriptionUsers(message.content_id, lastId);
                         if (rows.length > 0) {
-                            await sendSQS(makeMessagingBody(message, rows), process.env.QUEUE_URL);
+                            await deps.sendSQS(deps.makeMessagingBody(message, rows), process.env.QUEUE_URL);
                             lastId = rows[rows.length - 1].id;
                             sendTotal += rows.length;
                             console.info(`ContentId: ${message.content_id}, sendTotal: ${sendTotal},Title: ${message.content_title}, Sended: ${rows.length}, lastId: ${lastId}`);
@@ -136,7 +141,7 @@ module.exports.main = async event => {
                         if (loop && sendTotal >= MAX_SEND_COUNT) {
                             loop = false;
                             message.last_id = lastId;
-                            await sendSQS(message, process.env.MESSAGE_QUEUE_URL);
+                            await deps.sendSQS(message, process.env.MESSAGE_QUEUE_URL);
                             console.info(`Exceed Max Send Count. Continue next job: ${JSON.stringify(message)}`);
                         }
                     }
@@ -148,9 +153,4 @@ module.exports.main = async event => {
     } catch (err) {
         console.error('[ERROR]', err);
     }
-}
-
-module.exports = {
-    getSubscriptionUsers,
-    makeMessagingBody
 }

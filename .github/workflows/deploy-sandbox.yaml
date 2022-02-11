@@ -1,0 +1,56 @@
+name: Deploy BI Lambda Function
+on:
+  push:
+    branches:
+      - sandbox   # sandbox branch for sandbox server release
+
+jobs:
+  deploy:
+    name: lambda deploy
+    runs-on: ubuntu-20.04
+    env:
+      working-directory: ./${{ github.event.inputs.path }}
+    strategy:
+      matrix:
+        node-version: [ 12.x ]
+        working-directory: ['lambda-sample','lambda-sample2']
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: npm install
+        working-directory: ${{ matrix.working-directory }}
+        run: npm ci
+
+      - name: Extract current git branch and tag name
+        shell: bash
+        run: |
+          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+          echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
+        id: extract_branch
+
+      - name: serverless deploy (sandbox case)
+        run: |
+          echo "serverless deploy --stage sandbox --region ${{ secrets.AWS_REGION }} --aws-profile deploy"
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile deploy
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile deploy
+          aws configure set region ${{ secrets.AWS_REGION }} --profile deploy
+          npm install -g serverless
+          serverless deploy --stage sandbox --region ${{ secrets.AWS_REGION }} --aws-profile deploy
+        working-directory: ${{ matrix.working-directory }}
+        if: contains(steps.extract_branch.outputs.branch, 'sandbox')
+
+#      - name: Slack Notification
+#        uses: 8398a7/action-slack@v3.8.0
+#        with:
+#          status: ${{ job.status }}
+#          fields: repo,author,eventName,workflow,ref
+#          channel: '#kw-backend-notification'
+#        env:
+#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+#        if: always()
+

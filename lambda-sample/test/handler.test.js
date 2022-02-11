@@ -2,14 +2,14 @@ const lambda = require('../handler');
 const AWS = require('aws-sdk');
 const sinon = require("sinon");
 const expect = require("chai").expect;
-const eventJson = require('./input-data/update-push-test.json');
-let event = eventJson;
+const validData = require('./input-data/update-push-test.json');
+const invalidData = require('./input-data/invalid-update-push-test.json');
 const {GenericContainer} = require("testcontainers");
 const mysql = require("mysql");
 const dbModule = require('../db-module');
 
-describe('메인 함수 Validation 테스트', () => {
-    const containers = {};
+describe('메인 함수 유닛 테스트', () => {
+/*    const containers = {};
     before(async () => {
         containers.mysqlContainer = await new GenericContainer('mysql:5.7')
             .withExposedPorts(3306)
@@ -72,14 +72,16 @@ describe('메인 함수 Validation 테스트', () => {
             });
         });
     }
-
-    it("구독자 정보로 에피소드 업데이트 푸시 발송 메시지를 구성하는데 성공한다", async () => {
+*/
+    it("작품 업데이트 정보로 업데이트 푸시 발송 메시지를 정상적으로 생성한다", async () => {
         process.env.USER_SETTINGS_HOOK = "http://notification/settings";
         process.env.LOCALE = "kor";
-        const connection = await getConnection();
-        sinon.stub(dbModule, "getConnection").returns(connection);
-        const rows = await lambda.getSubscriptionUsers(66, 0);
-        const messageBody = await lambda.makeMessagingBody(JSON.parse(event.Records[0].body), rows);
+        const sample = [{id: 258, user_id: 'koru56d69b530de080'},
+            {id: 264, user_id: 'koru56d79b530de081'},
+            {id: 266, user_id: 'koru4440fb9284edb9'},
+            {id: 268, user_id: 'koru386bc18f406996'},
+            {id: 272, user_id: 'kru22abf9acf77da2'}];
+        const messageBody = await lambda.makeMessagingBody(JSON.parse(validData.Records[0].body), sample);
         expect(messageBody.type).to.equal("EPISODE_UPDATE");
         expect(messageBody.topic).to.equal("66");
         expect(messageBody.to.ids).to.have.length(5);
@@ -94,5 +96,12 @@ describe('메인 함수 Validation 테스트', () => {
         expect(messageBody.message.body).to.equal("'어게인 1화 ~ 포지션5화'가 업데이트 되었습니다.");
         expect(messageBody.message.thumbnail).to.equal("https://${CDN_HOST}/C/46/c1/2x/02fab9c9-c7dd-454b-8731-cd0be951ee64");
         expect(messageBody.message.link).to.equal("kakaowebtoon://content/seo_99999/66");
+    });
+
+    it("찜한 내역이 없을경우 더이상 진행되지 않는다.", async () => {
+        sinon.stub(console, 'info');
+        sinon.stub(lambda, "getSubscriptionUsers").returns([]);
+        await lambda.main(validData);
+        expect( console.info.calledWith("There is no more content subscriber => ContentId: 66, Title: 사랑해요") ).to.be.true
     });
 });
