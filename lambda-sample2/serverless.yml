@@ -6,7 +6,7 @@ custom:
     automatic: true
     number: 10
   common: ${file(./env/common.json)}
-  env: ${file(./env/${env:LOCALE, 'kor'}/${opt:stage,'local'}.json)}
+  env: ${file(./env/${opt:stage,'local'}.json)}
 
 provider:
   name: aws

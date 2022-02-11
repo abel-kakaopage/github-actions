@@ -1,0 +1,4 @@
+{
+  "SLACK_CHANNEL": "kwtoon-data-alert",
+  "SLACK_WEBHOOK": "https://hooks.slack.com/services/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"
+}
