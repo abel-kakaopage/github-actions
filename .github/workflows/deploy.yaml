@@ -80,7 +80,7 @@ jobs:
 
             if [ $var == 'tha' ] || [ $var == 'twn' ] || [ $var == 'kor' ]
             then
-                npm install -g serverless
+                npm install -g serverless@2.52.1
                 echo "serverless deploy --stage $stage --region $awsRegion --aws-profile deploy -c $configFile"
                 serverless deploy --stage $stage --region $awsRegion --aws-profile deploy -c $configFile
             fi

@@ -39,7 +39,7 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile deploy
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile deploy
           aws configure set region ${{ secrets.AWS_REGION }} --profile deploy
-          npm install -g serverless
+          npm install -g serverless@2.52.1
           serverless deploy --stage sandbox --region ${{ secrets.AWS_REGION }} --aws-profile deploy
         working-directory: ${{ matrix.working-directory }}
         if: contains(steps.extract_branch.outputs.branch, 'sandbox')
