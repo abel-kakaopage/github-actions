@@ -1,6 +1,6 @@
 'use strict';
-const AWS = require("aws-sdk");
-AWS.config.update({
+const aws = require("aws-sdk");
+aws.config.update({
     region: process.env.REGION
 })
 const {Kafka} = require('kafkajs')
@@ -8,9 +8,9 @@ const moment = require("moment-timezone");
 const HashMap = require("hashmap");
 const AthenaExpress = require("athena-express");
 const {v4: uuid4} = require('uuid');
-const s3 = new AWS.S3();
+const s3 = new aws.S3();
 const athenaExpressConfig = {
-    aws: AWS,
+    aws,
     db: process.env.ATHENA_DB,
     s3: process.env.QUERY_RESULT,
 };
