@@ -12,7 +12,7 @@ provider:
   name: aws
   runtime: nodejs14.x
   lambdaHashingVersion: 20201221
-  region: ${self:custom.env.AWS_REGION}
+  region: ${self:custom.env.REGION}
   memorySize: 128
   timeout: 30
   deploymentBucket:
