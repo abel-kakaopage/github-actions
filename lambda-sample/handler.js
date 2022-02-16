@@ -446,11 +446,12 @@ const deps = {
     makeTotalRanking,
     setRankAndUpDownInfo,
     getRankingChart,
-    makeDomainEvent
+    makeDomainEvent,
+    main
 }
 module.exports = deps;
 
-module.exports.main = async event => {
+async function main(event) {
     // 랭킹 수집일자 - Custom으로 인자로 세팅하거나 전일자로 세팅
     let targetDate = event.targetDate;
     let isManual = true;
