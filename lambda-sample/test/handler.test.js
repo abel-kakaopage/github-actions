@@ -1,107 +1,171 @@
+'use strict';
+
 const lambda = require('../handler');
-const AWS = require('aws-sdk');
 const sinon = require("sinon");
 const expect = require("chai").expect;
-const validData = require('./input-data/update-push-test.json');
-const invalidData = require('./input-data/invalid-update-push-test.json');
-const {GenericContainer} = require("testcontainers");
-const mysql = require("mysql");
-const dbModule = require('../db-module');
+const HashMap = require("hashmap");
+const summary = require("./datas/summary.json");
 
-describe('메인 함수 유닛 테스트', () => {
-/*    const containers = {};
-    before(async () => {
-        containers.mysqlContainer = await new GenericContainer('mysql:5.7')
-            .withExposedPorts(3306)
-            .withEnv('MYSQL_ALLOW_EMPTY_PASSWORD', '1')
-            .withEnv('MYSQL_DATABASE', 'popularity')
-            .start();
+const targetDate = "2020-02-01-01";
+const region = "ko";
+const language = "kor";
 
-        let sql = "CREATE TABLE `subscription` (" +
-            "  `id` bigint(20) NOT NULL AUTO_INCREMENT," +
-            "  `user_id` varchar(45) CHARACTER SET latin1 NOT NULL," +
-            "  `content_id` bigint(20) NOT NULL," +
-            "  `notification_enabled_flag` tinyint(1) NOT NULL DEFAULT '1'," +
-            "  `created_dt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)," +
-            "  `updated_dt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)," +
-            "  PRIMARY KEY (`id`)," +
-            "  UNIQUE KEY `udx_UserId_ContentId` (`user_id`,`content_id`)," +
-            "  KEY `idx_ContentId_NotificationEnabledFlag` (`content_id`,`notification_enabled_flag`)" +
-            ") ENGINE=InnoDB AUTO_INCREMENT=573892 DEFAULT CHARSET=utf8mb4;"
-        await executeQuery(sql, []);
+const WEIGHTS = {
+    "twn": [1.2, 1, 1.5],
+    "tha": [1.2, 1, 1.5],
+    "idn": [1.2, 1, 1.5],
+    "kor": [1.2, 1, 2]
+};
 
-        sql = "INSERT INTO `subscription`" +
-            "(`user_id`," +
-            "`content_id`," +
-            "`notification_enabled_flag`," +
-            "`created_dt`," +
-            "`updated_dt`)" +
-            "VALUES" +
-            "(?,?,?,now(),now())"
-        await executeQuery(sql, ['koru56d69b530de080', 66, true]);
-        await executeQuery(sql, ['koru56d79b530de081', 66, true]);
-        await executeQuery(sql, ['koru4440fb9284edb9', 66, true]);
-        await executeQuery(sql, ['koru386bc18f406996', 66, true]);
-        await executeQuery(sql, ['kru22abf9acf77da2', 66, true]);
+const sandbox = sinon.createSandbox();
+
+describe('다음 포털 랭킹 생성 함수 테스트', () => {
+    afterEach(() => {
+        sandbox.restore();
     });
 
-    after(async () => {
+    it("통계데이터 스코어 정렬 기능이 정상적으로 동작한다.", async () => {
+        let sortedSummary = lambda.sort('open_uu', summary.Items);
+        let beforeScore = Number(sortedSummary[0].open_uu);
+        for (let i = 1; i < sortedSummary.length; i++) {
+            expect(beforeScore).to.greaterThanOrEqual(Number(sortedSummary[i].open_uu));
+            beforeScore = Number(sortedSummary[i].open_uu);
+        }
+
+        sortedSummary = lambda.sort('open_cnt', summary.Items);
+        beforeScore = Number(sortedSummary[0].open_cnt);
+        for (let i = 1; i < sortedSummary.length; i++) {
+            expect(beforeScore).to.greaterThanOrEqual(Number(sortedSummary[i].open_cnt));
+            beforeScore = Number(sortedSummary[i].open_uu);
+        }
+
+        sortedSummary = lambda.sort('total_gmv', summary.Items);
+        beforeScore = Number(sortedSummary[0].total_gmv);
+        for (let i = 1; i < sortedSummary.length; i++) {
+            expect(beforeScore).to.greaterThanOrEqual(Number(sortedSummary[i].total_gmv));
+            beforeScore = Number(sortedSummary[i].total_gmv);
+        }
     });
 
-    async function getConnection() {
-        return mysql.createConnection({
-            host: containers.mysqlContainer.getHost(),
-            port: containers.mysqlContainer.getMappedPort(3306),
-            user: 'root',
-            database: 'popularity'
+    it("스코어별 순위에 가중치를 적용하는 기능이 정상적으로 동작한다.", async () => {
+        let scoreBoard = new HashMap();
+        let sortedSummary = lambda.sort("open_uu", summary.Items);
+        const weight = WEIGHTS["kor"];
+        sortedSummary.forEach(function (item, index) {
+            if (item["open_uu"] <= 0) {
+                lambda.caculateOverallScore(scoreBoard, item.content_id, 0);
+            } else {
+                lambda.caculateOverallScore(scoreBoard, item.content_id, (sortedSummary.length - index) * weight[0]);
+            }
         });
-    }
+        sortedSummary.forEach(function (item, index) {
+            expect(scoreBoard.get(item.content_id)).to.be.eq((sortedSummary.length - index) * weight[0]);
+        });
+    });
 
-    function executeQuery(sql, values) {
-        return new Promise(async (resolve, reject) => {
-            const connection = await getConnection();
-            connection.query(sql, values, function (err, result) {
-                if (result)
-                    resolve(result);
-                if (err) {
-                    console.error("[Error] executeQuery", err);
-                    reject(err);
+    it("통합 점수 랭킹을 산정하는 함수가 정상적으로 동작한다.", async () => {
+        process.env.LOCALE = language;
+        const weight = WEIGHTS[language];
+        const types = ["open_uu", "open_cnt", "total_gmv"];
+        let scoreBoard = new HashMap();
+        let sortedSummary;
+        // 타입별로 작품의 점수를 산정하여 합산한다.
+        types.forEach(function (type, index) {
+            sortedSummary = lambda.sort(type, summary.Items);
+            sortedSummary.forEach(function (item, index) {
+                if (item[type] <= 0) {
+                    lambda.caculateOverallScore(scoreBoard, item.content_id, 0);
+                } else {
+                    lambda.caculateOverallScore(scoreBoard, item.content_id, (sortedSummary.length - index) * weight[0]);
                 }
             });
-            connection.end(function (err) {
-            });
         });
-    }
-*/
-    it("작품 업데이트 정보로 업데이트 푸시 발송 메시지를 정상적으로 생성한다", async () => {
-        process.env.USER_SETTINGS_HOOK = "http://notification/settings";
-        process.env.LOCALE = "kor";
-        const sample = [{id: 258, user_id: 'koru56d69b530de080'},
-            {id: 264, user_id: 'koru56d79b530de081'},
-            {id: 266, user_id: 'koru4440fb9284edb9'},
-            {id: 268, user_id: 'koru386bc18f406996'},
-            {id: 272, user_id: 'kru22abf9acf77da2'}];
-        const messageBody = await lambda.makeMessagingBody(JSON.parse(validData.Records[0].body), sample);
-        expect(messageBody.type).to.equal("EPISODE_UPDATE");
-        expect(messageBody.topic).to.equal("66");
-        expect(messageBody.to.ids).to.have.length(5);
-        expect(messageBody.to.ids).to.includes("koru56d69b530de080", "koru56d79b530de081", "koru4440fb9284edb9", "koru386bc18f406996", "kru22abf9acf77da2");
-        expect(messageBody.hooks.before).to.have.length(1);
-        expect(messageBody.hooks.before[0].type).to.equal("http");
-        expect(messageBody.hooks.before[0].url).to.equal(process.env.USER_SETTINGS_HOOK);
-        expect(messageBody.hooks.before[0].data.pushType).to.equal("EPISODE_UPDATE");
-        expect(messageBody.hooks.before[0].data.region).to.equal(process.env.LOCALE);
-        expect(messageBody.message.type).to.equal("EPISODE_UPDATE");
-        expect(messageBody.message.title).to.equal("사랑해요 업데이트");
-        expect(messageBody.message.body).to.equal("'어게인 1화 ~ 포지션5화'가 업데이트 되었습니다.");
-        expect(messageBody.message.thumbnail).to.equal("https://${CDN_HOST}/C/46/c1/2x/02fab9c9-c7dd-454b-8731-cd0be951ee64");
-        expect(messageBody.message.link).to.equal("kakaowebtoon://content/seo_99999/66");
+        // 통합 점수를 total_score 필드에 기록한다
+        sortedSummary.forEach(function (item) {
+            item.total_score = scoreBoard.get(item.content_id);
+        });
+        // 통합 점수 기준으로 데이터를 정렬한다
+        lambda.sort("total_score", sortedSummary);
+
+        // 통합 점수를 기준으로 정렬한 데이터와 전체 랭킹을 산정하는 함수의 결과가 동일한지 확인
+        const totalRanking = await lambda.makeTotalRanking(summary.Items);
+        sortedSummary.forEach(function (item, index) {
+            expect(item.total_score).to.be.eq(totalRanking[index].total_score);
+        });
     });
 
-    it("찜한 내역이 없을경우 더이상 진행되지 않는다.", async () => {
-        sinon.stub(console, 'info');
-        sinon.stub(lambda, "getSubscriptionUsers").returns([]);
-        await lambda.main(validData);
-        expect( console.info.calledWith("There is no more content subscriber => ContentId: 66, Title: 사랑해요") ).to.be.true
+    it("랭킹에 등락정보가 정상적으로 생성된다.", async () => {
+        const totalRanking = await lambda.makeTotalRanking(summary.Items);
+        const lastRanking = new HashMap();
+        lastRanking.set(54, 10);
+        lastRanking.set(40, 18);
+        lastRanking.set(75, 45);
+        lastRanking.set(60, 28);
+        lastRanking.set(83, 5);
+        lastRanking.set(22, 58);
+        lastRanking.set(63, 32);
+        lastRanking.set(51, 7);
+        lastRanking.set(80, 70);
+        lastRanking.set(42, 25);
+        sandbox.stub(lambda, "getRankingChart").returns(lastRanking);
+        const rankings = await lambda.setRankAndUpDownInfo(targetDate, region, language, totalRanking);
+        for (let ranking of rankings) {
+            if (lastRanking.has(ranking.content_id)) {
+                expect(ranking.rank_last).to.be.eq(lastRanking.get(ranking.content_id));
+            }
+        }
+    });
+
+    it("랭킹정보로 올바른 포맷의 이벤트 메시지가 생성된다", async () => {
+        const totalRankings = await lambda.makeTotalRanking(summary.Items);
+        const lastRanking = new HashMap();
+        lastRanking.set(54, 10);
+        lastRanking.set(40, 18);
+        lastRanking.set(75, 45);
+        lastRanking.set(60, 28);
+        lastRanking.set(83, 5);
+        lastRanking.set(22, 58);
+        lastRanking.set(63, 32);
+        lastRanking.set(51, 7);
+        lastRanking.set(80, 70);
+        lastRanking.set(42, 25);
+        sandbox.stub(lambda, "getRankingChart").returns(lastRanking);
+        // 연재 랭킹
+        let rankings = await lambda.setRankAndUpDownInfo(region, language, 'SERIAL', totalRankings);
+        let domainEvent = JSON.parse(await lambda.makeDomainEvent(region, language, 'SERIAL', rankings));
+        expect(domainEvent.event.type).to.be.eq("CREATE");
+        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
+        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
+        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
+        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY_DAUM_PORTAL");
+        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq('SERIAL');
+        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("연재랭킹");
+        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(10);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(10);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(40);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(18);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].content_id).to.be.eq(22);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].rank).to.be.eq(10);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].rank_last).to.be.eq(58);
+        // 완결 랭킹
+        rankings = await lambda.setRankAndUpDownInfo(region, language, 'FINISH', totalRankings);
+        domainEvent = JSON.parse(await lambda.makeDomainEvent(region, language, 'FINISH', rankings));
+        expect(domainEvent.event.type).to.be.eq("CREATE");
+        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
+        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
+        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
+        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY_DAUM_PORTAL");
+        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq('FINISH');
+        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("완결랭킹");
+        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(10);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(10);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(40);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(18);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].content_id).to.be.eq(22);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].rank).to.be.eq(10);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].rank_last).to.be.eq(58);
     });
 });
+
