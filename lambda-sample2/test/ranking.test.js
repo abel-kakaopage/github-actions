@@ -1,3 +1,4 @@
+'use strict';
 const ranking = require('../ranking');
 const sinon = require("sinon");
 const expect = require("chai").expect;
@@ -15,21 +16,9 @@ const WEIGHTS = {
     "kor": [1.2, 1, 2]
 };
 
-const genres = {
-    Items: [
-        {genre_code: 'DRAMA'},
-        {genre_code: 'SCHOOL_ACTION_FANTASY'},
-        {genre_code: 'COMIC_EVERYDAY_LIFE'},
-        {genre_code: 'ROMANCE'},
-        {genre_code: 'HORROR_THRILLER'},
-        {genre_code: 'ROMANCE_FANTASY'},
-        {genre_code: 'FANTASY_DRAMA'}
-    ]
-}
-
 const sandbox = sinon.createSandbox();
 
-describe('일간 랭킹 생성 함수 테스트', () => {
+describe('실시간 랭킹 생성 함수 테스트', () => {
     afterEach(() => {
         sandbox.restore();
     });
@@ -90,40 +79,22 @@ describe('일간 랭킹 생성 함수 테스트', () => {
                 }
             });
         });
-        // 통합 점수를 total_score 필드에 기록
+        // 통합 점수를 total_score 필드에 기록한다
         sortedSummary.forEach(function (item) {
             item.total_score = scoreBoard.get(item.content_id);
         });
-        // 통합 점수 기준으로 데이터를 정렬
+        // 통합 점수 기준으로 데이터를 정렬한다
         ranking.sort("total_score", sortedSummary);
 
         // 통합 점수를 기준으로 정렬한 데이터와 전체 랭킹을 산정하는 함수의 결과가 동일한지 확인
-        sandbox.stub(ranking, "getContentSummary").returns(summary);
-        const totalRanking = await ranking.makeTotalRanking(targetDate, region, language);
+        const totalRanking = await ranking.makeTotalRanking(summary.Items);
         sortedSummary.forEach(function (item, index) {
             expect(item.total_score).to.be.eq(totalRanking[index].total_score);
         });
     });
 
-    it("전체 랭킹 기반으로 장르별 랭킹이 정상적으로 생성된다.", async () => {
-        sandbox.stub(ranking, "getContentSummary").returns(summary);
-        const totalRanking = await ranking.makeTotalRanking(targetDate, region, language);
-        const rankingMap = ranking.makeGenreRanking(totalRanking, genres);
-        expect(rankingMap.size).to.be.eq(8);
-        expect(rankingMap.get("ALL").length).to.eq(78);
-        expect(rankingMap.get("DRAMA").length).to.eq(11);
-        expect(rankingMap.get("SCHOOL_ACTION_FANTASY").length).to.eq(11);
-        expect(rankingMap.get("COMIC_EVERYDAY_LIFE").length).to.eq(11);
-        expect(rankingMap.get("ROMANCE").length).to.eq(11);
-        expect(rankingMap.get("HORROR_THRILLER").length).to.eq(12);
-        expect(rankingMap.get("ROMANCE_FANTASY").length).to.eq(11);
-        expect(rankingMap.get("FANTASY_DRAMA").length).to.eq(11);
-    });
-
     it("랭킹에 등락정보가 정상적으로 생성된다.", async () => {
-        sandbox.stub(ranking, "getContentSummary").returns(summary);
-        const totalRanking = await ranking.makeTotalRanking(targetDate, region, language);
-        let rankingMap = ranking.makeGenreRanking(totalRanking, genres);
+        const totalRanking = await ranking.makeTotalRanking(summary.Items);
         const lastRanking = new HashMap();
         lastRanking.set(54, 10);
         lastRanking.set(40, 18);
@@ -137,8 +108,7 @@ describe('일간 랭킹 생성 함수 테스트', () => {
         lastRanking.set(42, 25);
         sandbox.stub(ranking, "getBeforeRankingDt").returns({Items: [{target_dt: targetDate}]});
         sandbox.stub(ranking, "getRankingChart").returns(lastRanking);
-        rankingMap = await ranking.setRankAndUpDownInfo(targetDate, region, language, rankingMap);
-        const rankings = JSON.parse(rankingMap.get("ALL"));
+        const rankings = await ranking.setRankAndUpDownInfo(targetDate, region, language, totalRanking);
         for (let ranking of rankings) {
             if (lastRanking.has(ranking.content_id)) {
                 expect(ranking.rank_last).to.be.eq(lastRanking.get(ranking.content_id));
@@ -147,9 +117,7 @@ describe('일간 랭킹 생성 함수 테스트', () => {
     });
 
     it("랭킹정보로 올바른 포맷의 이벤트 메시지가 생성된다", async () => {
-        sandbox.stub(ranking, "getContentSummary").returns(summary);
-        const totalRanking = await ranking.makeTotalRanking(targetDate, region, language);
-        let rankingMap = ranking.makeGenreRanking(totalRanking, genres);
+        const totalRankings = await ranking.makeTotalRanking(summary.Items);
         const lastRanking = new HashMap();
         lastRanking.set(54, 10);
         lastRanking.set(40, 18);
@@ -161,128 +129,26 @@ describe('일간 랭킹 생성 함수 테스트', () => {
         lastRanking.set(51, 7);
         lastRanking.set(80, 70);
         lastRanking.set(42, 25);
+
         sandbox.stub(ranking, "getBeforeRankingDt").returns({Items: [{target_dt: targetDate}]});
         sandbox.stub(ranking, "getRankingChart").returns(lastRanking);
-        rankingMap = await ranking.setRankAndUpDownInfo(targetDate, region, language, rankingMap);
-        let genreCode = "ALL"
-        let domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
+        let rankings = await ranking.setRankAndUpDownInfo(targetDate, region, language,  totalRankings);
+        let domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, rankings));
         expect(domainEvent.event.type).to.be.eq("CREATE");
         expect(domainEvent.event.attributes[0].region).to.be.eq(region);
         expect(domainEvent.event.attributes[0].language).to.be.eq(language);
         expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
+        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("HOURLY");
+        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq('ALL');
+        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("REALTIME RANKING");
         expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(78);
         expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(78);
         expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(40);
         expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
         expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(18);
-
-        genreCode = "DRAMA"
-        domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
-        expect(domainEvent.event.type).to.be.eq("CREATE");
-        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
-        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
-        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
-        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(80);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(70);
-
-        genreCode = "SCHOOL_ACTION_FANTASY"
-        domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
-        expect(domainEvent.event.type).to.be.eq("CREATE");
-        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
-        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
-        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
-        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(51);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(7);
-
-        genreCode = "COMIC_EVERYDAY_LIFE"
-        domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
-        expect(domainEvent.event.type).to.be.eq("CREATE");
-        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
-        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
-        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
-        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(83);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(5);
-
-        genreCode = "ROMANCE"
-        domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
-        expect(domainEvent.event.type).to.be.eq("CREATE");
-        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
-        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
-        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
-        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(14);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(0);
-
-        genreCode = "HORROR_THRILLER"
-        domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
-        expect(domainEvent.event.type).to.be.eq("CREATE");
-        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
-        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
-        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
-        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(12);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(12);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(40);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(18);
-
-        genreCode = "ROMANCE_FANTASY"
-        domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
-        expect(domainEvent.event.type).to.be.eq("CREATE");
-        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
-        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
-        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
-        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(22);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(58);
-
-        genreCode = "FANTASY_DRAMA"
-        domainEvent = JSON.parse(await ranking.makeDomainEvent(region, language, genreCode, JSON.parse(rankingMap.get(genreCode))));
-        expect(domainEvent.event.type).to.be.eq("CREATE");
-        expect(domainEvent.event.attributes[0].region).to.be.eq(region);
-        expect(domainEvent.event.attributes[0].language).to.be.eq(language);
-        expect(domainEvent.event.attributes[0].list.length).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].type).to.be.eq("DAILY");
-        expect(domainEvent.event.attributes[0].list[0].genre_code).to.be.eq(genreCode);
-        expect(domainEvent.event.attributes[0].list[0].ranking.title).to.be.eq("DAILY RANKING");
-        expect(domainEvent.event.attributes[0].list[0].ranking.total).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list.length).to.be.eq(11);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].content_id).to.be.eq(60);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank).to.be.eq(1);
-        expect(domainEvent.event.attributes[0].list[0].ranking.list[0].rank_last).to.be.eq(28);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].content_id).to.be.eq(22);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].rank).to.be.eq(10);
+        expect(domainEvent.event.attributes[0].list[0].ranking.list[9].rank_last).to.be.eq(58);
     });
 });
 
