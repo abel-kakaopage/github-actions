@@ -1,7 +1,4 @@
 {
-	"push": {
-		"title": "%s 업데이트",
-		"single-message": "'%s'가 업데이트 되었습니다.",
-		"multi-message": "'%s ~ %s'가 업데이트 되었습니다."
-	}
+    "contenthome_universe_matching_type_today_mostviewed": "오늘 사람들이 가장 많이 본 작품들",
+    "contenthome_universe_matching_type_today_mostpopular": "오늘 사람들이 가장 많이 찜한 작품들"
 }

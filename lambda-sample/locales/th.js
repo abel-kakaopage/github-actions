@@ -1,7 +1,4 @@
 {
-    "push": {
-        "title": "อัปเดต %s",
-        "single-message": "'%s' อัปเดตแล้ว",
-        "multi-message": "'%s ~ %s' อัปเดตแล้ว"
-    }
+    "contenthome_universe_matching_type_today_mostviewed": "ผลงานที่มีผู้อ่านมากที่สุดในวันนี้",
+    "contenthome_universe_matching_type_today_mostpopular": "ผลงานที่ผู้ติดตามมากที่สุดในวันนี้"
 }

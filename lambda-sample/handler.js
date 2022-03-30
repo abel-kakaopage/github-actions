@@ -1,52 +1,76 @@
 'use strict';
-const moment = require("moment");
-const ranking = require("./ranking");
+const AWS = require('aws-sdk');
+const moment = require('moment');
 
-const sleep = (ms) => {
-    return new Promise(resolve=>{
-        setTimeout(resolve,ms)
-    })
-}
+AWS.config.update({
+    region: process.env.AWS_REGION
+});
 
-module.exports.main = async event => {
-    // 랭킹 수집일자 - Custom으로 인자로 세팅하거나 전주 마지막 일요일로 생성
-    let beforeWeekLastDay = moment().utc().endOf('week').add(-1, 'week').add(1, 'day').format('YYYY-MM-DD');
-    let isManual = false;
-    if (event.beforeWeekLastDay) {
-        beforeWeekLastDay = event.beforeWeekLastDay;
-        isManual = true;
-    }
+const ALREADY_READ_DYNAMODB_TABLE = process.env.ALREADY_READ_DYNAMODB_TABLE;
+const dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 
-    let existsChart = await ranking.existChart(beforeWeekLastDay);
-    console.info(`[Generate Weekly Ranking] ${moment.utc()} => beforeWeekLastDay: ${beforeWeekLastDay}, isManual : ${isManual}, existsChart : ${existsChart}`);
-    if (isManual || !existsChart) {
-        // 동일 요청이 들어올경우에 기존 데이터를 삭제한다.
-        await ranking.emptyS3Bucket(`ranking_info/type=WEEKLY/target_dt=${beforeWeekLastDay}/`);
-        await ranking.emptyS3Bucket(`ranking_chart/target_dt=WEEKLY-${beforeWeekLastDay}/`);
-        // 데이터 파티션 생성
-        await ranking.createPartitions('stat_content_summary_weekly');
-        await sleep(5000);
-        // 리전의 언어 정보 조회
-        const groupInfos = await ranking.getGroupInfos(beforeWeekLastDay);
-        if (groupInfos.Items && groupInfos.Items.length > 0) {
-            for (const parentIndex in groupInfos.Items) {
-                const region = groupInfos.Items[parentIndex].region;
-                const language = groupInfos.Items[parentIndex].user_language;
-                const summary = await ranking.getContentSummary(beforeWeekLastDay, region, language);
-                if (summary.Items) {
-                    // 전체 랭킹 생성
-                    let totalRankings = await ranking.makeTotalRanking(summary.Items)
-                    // 이전 랭킹 정보와 비교하여 등락 정보를 생성
-                    totalRankings = await ranking.setRankAndUpDownInfo(region, language, totalRankings);
-                    // 랭킹 정보를 저장
-                    await ranking.createRankingData(beforeWeekLastDay, region, language, totalRankings);
-                    // 도메인 이벤트 발행
-                    await ranking.publishDomainEvent(region, language, totalRankings);
+module.exports.main = (event, context, callback) => {
+    console.log(JSON.stringify(event));
+    const now = moment().utc().utcOffset(process.env.TIMEZONE_OFFSET);
+    const ttl = now.endOf('day').unix();
+
+    for (const key in event.records) {
+        let batch = event.records[key].map((data) => {
+            const msg = Buffer.from(data.value, 'base64').toString();
+            console.info('Message: ', msg);
+
+            const record = JSON.parse(msg);
+            const event = record.event;
+
+            if (event && event.type === 'CREATE') {
+                const attributes = event.attributes;
+                if (attributes && attributes.length === 1) {
+                    const episodeRead = attributes[0]
+                    if (episodeRead.userId) {
+                        return {
+                            PutRequest: {
+                                Item: {
+                                    user_id: {
+                                        S: episodeRead.userId
+                                    },
+                                    expires_at: {
+                                        N: String(ttl)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        } else {
-            const msg = "[ERROR] Weekly summary data not exists";
-            console.error(msg);
+
+            return null;
+        }).filter(r => r != null);
+
+        const processItemsCallback = function (err, data) {
+            if (err) {
+                console.error(err);
+                callback(err);
+            } else {
+                console.info('DynamoDB response: ', data);
+                if (data.UnprocessedItems[ALREADY_READ_DYNAMODB_TABLE]) {
+                    dynamodb.batchWriteItem({RequestItems: data.UnprocessedItems}, processItemsCallback);
+                }
+            }
+        };
+
+        const ids = batch.map((param) => param.PutRequest.Item.user_id.S);
+        console.info('ids: ', JSON.stringify(ids));
+
+        batch = batch.filter((param, index) => ids.indexOf(param.PutRequest.Item.user_id.S) === index);
+        console.info('Batch: ', JSON.stringify(batch));
+        if (batch.length > 0) {
+            const requestItems = {};
+            requestItems[ALREADY_READ_DYNAMODB_TABLE] = batch;
+            dynamodb.batchWriteItem({RequestItems: requestItems}, processItemsCallback);
         }
     }
-}
+};
+
+
+
+
