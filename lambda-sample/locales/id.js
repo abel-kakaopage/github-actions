@@ -1,7 +1,4 @@
 {
-	"push": {
-		"title": "%s telah di-update",
-		"single-message": "'%s' updated",
-		"multi-message": "'%s ~ %s' telah di-update"
-	}
+    "contenthome_universe_matching_type_today_mostviewed": "Karya yang banyak dilihat hari ini.",
+    "contenthome_universe_matching_type_today_mostpopular": "Karya yang paling difavoritkan hari ini"
 }

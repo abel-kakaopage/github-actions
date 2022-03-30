@@ -1,7 +1,4 @@
 {
-	"push": {
-		"title": "%s mis à jour",
-		"single-message": "'%s' mis à jour",
-		"multi-message": "'%s ~ %s' mis à jour"
-	}
+    "contenthome_universe_matching_type_today_mostviewed": "Titres les plus lus aujourd’hui",
+    "contenthome_universe_matching_type_today_mostpopular": "Titres les plus ajoutés aux favoris aujourd’hui"
 }

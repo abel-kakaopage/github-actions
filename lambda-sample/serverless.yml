@@ -13,21 +13,21 @@ provider:
   runtime: nodejs14.x
   lambdaHashingVersion: 20201221
   region: ${self:custom.env.REGION}
-  memorySize: 128
-  timeout: 30
+  memorySize: 256
+  timeout: 60
   deploymentBucket:
-    name: ${self:custom.env.DEPLOYMENT_BUCKET}
+    name: kakaowebtoon-serverless-deploys-sandbox
   role: ${self:custom.env.ROLE}
   vpc:
     securityGroupIds:
-      - ${self:custom.env.SECURITY_GROUP}
+      - sg-0fcc53d5d6d7f6013
     subnetIds:
-      - ${self:custom.env.SUBNET_1}
-      - ${self:custom.env.SUBNET_2}
-      - ${self:custom.env.SUBNET_3}
+      - subnet-095ee8c4b19f948c5
+      - subnet-0140194953048852d
+      - subnet-065207e4ee21f3ea7
   environment:
-    SLACK_CHANNEL: ${self:custom.common.SLACK_CHANNEL}
-    LOCALE: ${self:custom.env.LOCALE}
+    ALREADY_READ_DYNAMODB_TABLE: ${self:custom.env.ALREADY_READ_DYNAMODB_TABLE}
+    TIMEZONE_OFFSET: ${self:custom.env.TIMEZONE_OFFSET}
   logRetentionInDays: ${self:custom.env.LOG_RETENTION, 3}
 
 functions:
